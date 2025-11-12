@@ -68,6 +68,11 @@ const pasanteSchema = new mongoose.Schema({
         type: String,
         enum: ['tiempo_completo', 'medio_tiempo', 'flexible'], // Solo puede tener uno de estos valores
         default: 'flexible' // Si no se indica, será "flexible"
+    },
+    favoritos: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Postulacion',
+        required: false
     }
 }, {
     timestamps: true // Agrega automáticamente campos createdAt y updatedAt

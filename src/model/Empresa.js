@@ -120,8 +120,13 @@ const empresaSchema = new mongoose.Schema({
         type: String,
         enum: ['1-10', '11-50', '51-200', '201-500', '500+'],
         default: ''
-    }
+    },
 
+    // Empresa verificada o pendiente de aprobación
+    verificada: {
+    type: Boolean,
+    default: false
+    }
 }, {
     // timestamps: agrega automáticamente los campos createdAt y updatedAt
     timestamps: true

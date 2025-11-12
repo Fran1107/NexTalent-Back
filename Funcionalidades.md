@@ -135,3 +135,41 @@ Esta persona se encarga del sistema de feedback de pasantes hacia empresas.
 * **Frontend:**
     * En la vista pública de perfil de empresa (`/empresas/:id`), añadir una pestaña/sección para mostrar las reseñas.
     * En el Dashboard de Pasante, en "Mis Aplicaciones", si una está "Aceptada" (o "Finalizada"), mostrar un botón para "Dejar Reseña".
+
+
+### 6. Integrante F: Gestión de Pasantías (Ofertas Académicas)
+
+Esta persona se encarga de administrar las **pasantías publicadas por las empresas**, que luego estarán disponibles para que los pasantes se postulen.  
+
+* **Backend:**
+    * **Modelo:** Crear `Pasantia.js` en `src/model/`. Debe incluir:
+        * `empresaId` (referencia a `Empresa`, obligatoria).
+        * `titulo` (String, obligatorio, trim).
+        * `descripcion` (String, obligatorio, con máximo de 2000 caracteres).
+        * `requisitos` (Array de Strings, opcional).
+        * `modalidad` (enum: 'Presencial', 'Remoto', 'Híbrido', default: 'Presencial').
+        * `duracion` (String, opcional, ej: "3 meses", "6 meses").
+        * `sector` (String, opcional, para categorizar las ofertas).
+        * `ubicacion` (objeto con `provincia`, `localidad`, `direccion`).
+        * `estado` (enum: 'Activa', 'Pausada', 'Finalizada', default: 'Activa').
+        * `fechaPublicacion` (Date, default: `Date.now`).
+    * **Controlador:** Crear `PasantiaController.js`.
+        * `createPasantia` (Protegida, solo `isEmpresa`).
+        * `updatePasantia` (Protegida, `isEmpresa`, solo la empresa dueña).
+        * `deletePasantia` (Protegida, `isEmpresa`, solo la empresa dueña).
+        * `getMyPasantias` (Protegida, `isEmpresa`, para su panel).
+        * `getAllPasantias` (Pública, para el catálogo de ofertas).
+        * `getPasantiaById` (Pública, para ver el detalle de una oferta).
+    * **Rutas:** Crear `pasantiaRoutes.js` y registrarlo en `server.js`.
+    * **Validación:** Crear schemas de Zod para `createPasantia` y `updatePasantia`.
+
+* **Frontend:**
+    * Crear la vista pública `/pasantias` con filtros por sector, modalidad y ubicación.
+    * Crear la vista pública `/pasantias/:id` para ver el detalle de la pasantía.
+    * En el Dashboard de Empresa, crear la sección "Mis Pasantías" (CRUD completo).
+    * En la vista de detalle, incluir un botón “Ver Postulantes” que redirija a las aplicaciones relacionadas (vinculando con el módulo de Aplicaciones).
+
+* **Notas de Integración:**
+    * Las **pasantías** son el punto central que conecta a empresas con pasantes.
+    * Cada **pasantía** puede tener múltiples **aplicaciones (Aplicacion.js)** y estar asociada a una **empresa (Empresa.js)**.
+    * Se recomienda poblar los campos `empresaId` y `requisitos` para enriquecer las consultas en el frontend.
