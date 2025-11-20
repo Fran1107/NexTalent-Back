@@ -35,6 +35,13 @@ const pasantiaSchema = new mongoose.Schema({
     enum: ["Activa", "Cerrada"],
     default: "Activa",
   },
+      /** Usuarios que marcaron esta pasantía como favorita */
+    favoritos: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Pasante"
+      },
+    ],
 }, {
   timestamps: true
 });

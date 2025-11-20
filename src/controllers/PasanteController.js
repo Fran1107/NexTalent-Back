@@ -1,7 +1,9 @@
 // Importamos los modelos necesarios
 // Pasante -> contiene la información del perfil del estudiante
 // User -> contiene los datos base del usuario (email, password, rol, etc.)
+import mongoose from 'mongoose';
 import Pasante from '../model/Pasante.js';
+import Pasantia from '../model/Pasantia.js';
 import User from '../model/User.js';
 
 // Controlador encargado de manejar todas las operaciones relacionadas con los pasantes
@@ -194,4 +196,64 @@ export class PasanteController {
             });
         }
     };
+
+    // ============================================================
+    // Agregar una postulación a favoritos
+    // ============================================================
+    static addFavorito = async (req, res) => {
+        try {
+            // Obtener IDs (pasantía del parámetro, pasante del token)
+            const { pasantiaId } = req.params
+            const pasanteId = req.user?.id
+
+            // Validacióm de pasantía
+            if ( !pasantiaId || mongoose.Types.ObjectId.isValid(pasantiaId) ) {
+                return res.status(400).message('ID de pasantía incorrecto')
+            }
+
+            // Validación de pasante
+            if ( !pasanteId || mongoose.Types.ObjectId.isValid(pasanteId) ) {
+                return res.status(400).message('Usuario no autenticado')
+            }
+
+      // -------------------------------------------------------
+      // 3️⃣  Agregar al array usando $addToSet (evita duplicados)
+      // -------------------------------------------------------
+      const actualizada = await Pasantia.findByIdAndUpdate(
+        pasantiaId,
+        { $addToSet: { favoritos: pasanteId } }, // <-- $addToSet = “agregar si no está”
+        { new: true }                         // devuelve el doc actualizado
+      )
+        .populate("favoritos", "nombre email") // opcional: trae datos del pasante
+        .exec();
+
+      if (!actualizada) {
+        return res.status(404).json({ message: "Pasantía no encontrada" });
+      }
+
+      // -------------------------------------------------------
+      // 4️⃣  Responder al cliente
+      // -------------------------------------------------------
+      return res.status(200).json({
+        message: "Pasantía añadida a favoritos",
+        totalFavoritos: actualizada.favoritos.length,
+        favoritos: actualizada.favoritos, // datos ya poblados
+        pasantia: {
+          _id: actualizada._id,
+          titulo: actualizada.titulo,
+          estado: actualizada.estado,
+        },
+      });
+    } catch (err) {
+      console.error("[addFavorito] →", err);
+      return res
+        .status(500)
+        .json({ message: "Error interno del servidor", error: err.message });
+    }
+  };
+
+    // static removeFavorito = async (req, res) => {
+
+    // }
 }
+
