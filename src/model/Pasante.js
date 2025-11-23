@@ -71,6 +71,11 @@ const pasanteSchema = new mongoose.Schema({
     },
     favoritos: {
         type: mongoose.Schema.Types.ObjectId,
+        ref: 'Pasantia',
+        required: false
+    },
+    postulaciones: {
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Postulacion',
         required: false
     }

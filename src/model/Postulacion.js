@@ -17,7 +17,7 @@ const postulacionSchema = new mongoose.Schema({
     },
     estado: {
         type: String,
-        enum: ['En revisión', 'Aceptado', 'Rechazao'],
+        enum: ['En revisión', 'Aceptado', 'Rechazado'],
         default: ''
     },
       mensaje: {

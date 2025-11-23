@@ -321,5 +321,14 @@ export class PasanteController {
     }
   };
 
+  static getMyFavoritos = async (req, res) => {
+    try {
+        const { pasantiasId }  = req.params
+        const pasanteId = req.user?.id
+
+    } catch (error) {
+        
+    }
+  }
 }
 
