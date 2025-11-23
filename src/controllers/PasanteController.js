@@ -283,7 +283,7 @@ export class PasanteController {
       // 2️⃣  Quitar del array usando $pull (operación atómica)
       // -------------------------------------------------
       const pasantia = await Pasantia.findByIdAndUpdate(
-        postulacionId,
+        pasantiaId,
         { $pull: { favoritos: pasanteId } }, // quita el ObjectId del array
         { new: true }                       // devuelve el documento actualizado
       )
@@ -321,14 +321,24 @@ export class PasanteController {
     }
   };
 
-  static getMyFavoritos = async (req, res) => {
-    try {
-        const { pasantiasId }  = req.params
-        const pasanteId = req.user?.id
+// Obtener todas las pasantías favoritas del usuario logueado
+    static getMyFavoritos = async (req, res) => {
+  try {
+    const userId = req.user.id; 
 
-    } catch (error) {
-        
-    }
+    const favoritas = await Pasantia.find({ 
+      favoritos: userId           // busca pasantías que incluyan al usuario en el array
+    })
+    .populate("empresa_id", "nombre sector") // opcional
+    .lean();
+
+    return res.json(favoritas);
+
+  } catch (error) {
+    console.error("Error al obtener favoritos:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
   }
+};
+
 }
 
