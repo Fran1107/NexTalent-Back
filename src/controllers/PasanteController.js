@@ -206,7 +206,7 @@ export class PasanteController {
             const { pasantiaId } = req.params
             const pasanteId = req.user?.id
 
-            // Validacióm de pasantía
+            // Validación de pasantía
             if ( !pasantiaId || mongoose.Types.ObjectId.isValid(pasantiaId) ) {
                 return res.status(400).message('ID de pasantía incorrecto')
             }
@@ -252,8 +252,74 @@ export class PasanteController {
     }
   };
 
-    // static removeFavorito = async (req, res) => {
+  static removeFavorito = async (req, res) => {
+    try {
+      const { pasantiaId } = req.params; // <-- id de la pasantía
 
-    // }
+      const pasanteId = req.user?.id;      // <-- el id del usuario autenticado
+
+      // -------------------------------------------------
+      // 1️⃣  Validaciones básicas
+      // -------------------------------------------------
+      if (!pasanteId) {
+        return res.status(403).json({
+          message: "Solo los pasantes pueden remover favoritos",
+        });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(pasantiaId)) {
+        return res
+          .status(400)
+          .json({ message: "pasantiaId no es un ObjectId válido" });
+      }
+
+      if (!pasanteId || !mongoose.Types.ObjectId.isValid(pasanteId)) {
+        return res
+          .status(401)
+          .json({ message: "Usuario no autenticado o id inválido" });
+      }
+
+      // -------------------------------------------------
+      // 2️⃣  Quitar del array usando $pull (operación atómica)
+      // -------------------------------------------------
+      const pasantia = await Pasantia.findByIdAndUpdate(
+        postulacionId,
+        { $pull: { favoritos: pasanteId } }, // quita el ObjectId del array
+        { new: true }                       // devuelve el documento actualizado
+      )
+        .populate("favoritos", "nombre email") // opcional: datos del pasante
+        .exec();
+
+      // -------------------------------------------------
+      // 3️⃣  Manejo de resultados
+      // -------------------------------------------------
+      if (!pasantia) {
+        return res
+          .status(404)
+          .json({ message: "Pasantía no encontrada" });
+      }
+
+      // Si el id no estaba en el array, `favoritos` no cambia,
+      // pero seguimos devolviendo 200.
+
+      return res.status(200).json({
+        message: "Favorito removido (si existía)",
+        totalFavoritos: pasantia.favoritos.length,
+        favoritos: pasantia.favoritos,
+        pasantia: {
+          _id: pasantia._id,
+          titulo: pasantia.titulo,
+          estado: pasantia.estado,
+        },
+      });
+    } catch (err) {
+      console.error("[removeFavorito] →", err);
+      return res.status(500).json({
+        message: "Error interno del servidor",
+        error: err.message,
+      });
+    }
+  };
+
 }
 
