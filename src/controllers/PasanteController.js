@@ -329,7 +329,7 @@ export class PasanteController {
     const favoritas = await Pasantia.find({ 
       favoritos: userId           // busca pasantías que incluyan al usuario en el array
     })
-    .populate("empresa_id", "nombre sector") // opcional
+    .populate("empresa_id", "nombre sector") 
     .lean();
 
     return res.json(favoritas);

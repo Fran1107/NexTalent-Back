@@ -10,6 +10,28 @@ const router = Router();
 router.get("/", PasanteController.getAllPasantes);
 router.get("/:id", PasanteController.getPasanteById);
 
+// Favoritos de pasantías (solo pasantes)
+router.post(
+  "/favoritos/:pasantiaId",
+  authenticate,
+  isPasante,
+  PasanteController.addFavorito
+);
+
+router.delete(
+  "/favoritos/:pasantiaId",
+  authenticate,
+  isPasante,
+  PasanteController.removeFavorito
+);
+
+router.get(
+  "/favoritos/my",
+  authenticate,
+  isPasante,
+  PasanteController.getMyFavoritos
+);
+
 // Rutas protegidas (requieren autenticación y ser pasante)
 router.get(
     "/profile/me", 
