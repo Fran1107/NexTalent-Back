@@ -26,6 +26,10 @@ server.use(cookieParser())
 server.use(express.json())
 
 // Rutas
+// --- SERVIR ARCHIVOS ESTÁTICOS ---
+// Esto permite acceder a http://localhost:PORT/uploads/nombre-archivo.jpg
+server.use('/uploads', express.static('uploads'));
+
 server.use("/api/auth", authRoutes)
 server.use("/api/pasantes", pasanteRoutes)
 server.use("/api/empresas", empresaRoutes)
