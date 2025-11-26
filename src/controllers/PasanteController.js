@@ -303,7 +303,7 @@ export class PasanteController {
       // pero seguimos devolviendo 200.
 
       return res.status(200).json({
-        message: "Favorito removido (si existía)",
+        message: "Favorito removido",
         totalFavoritos: pasantia.favoritos.length,
         favoritos: pasantia.favoritos,
         pasantia: {
