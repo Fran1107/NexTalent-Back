@@ -14,20 +14,12 @@ export class PasanteController {
     // ============================================================
     static getMyProfile = async (req, res) => {
         try {
-            // Busca el perfil del pasante asociado al usuario autenticado
             const pasante = await Pasante.findOne({ userId: req.user.id });
-
-            // Si no existe un perfil asociado, devuelve error 404
             if (!pasante) {
-                return res.status(404).json({ 
-                    error: 'Perfil de pasante no encontrado' 
-                });
+                return res.status(404).json({ error: 'Perfil de pasante no encontrado' });
             }
-
-            // Si se encuentra el perfil, se devuelve en la respuesta
             return res.status(200).json({ pasante });
         } catch (error) {
-            // En caso de error del servidor, se devuelve código 500
             return res.status(500).json({ 
                 error: 'Error al obtener perfil',
                 details: error.message 
@@ -36,7 +28,78 @@ export class PasanteController {
     };
 
     // ============================================================
-    // 📝 Actualizar perfil del pasante autenticado
+    // 📤 Subir/Actualizar CV (PDF)
+    // ============================================================
+    static uploadCV = async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'No se subió ningún archivo PDF' });
+            }
+
+            // Normalizamos la ruta (cambia backslashes de Windows \ a /)
+            const filePath = req.file.path.replace(/\\/g, "/");
+
+            // Buscamos y actualizamos solo el campo cvUrl
+            const pasante = await Pasante.findOneAndUpdate(
+                { userId: req.user.id },
+                { cvUrl: filePath },
+                { new: true } // Retorna el objeto actualizado
+            );
+
+            if (!pasante) {
+                return res.status(404).json({ error: 'Perfil de pasante no encontrado' });
+            }
+
+            return res.status(200).json({ 
+                message: 'CV subido correctamente', 
+                cvUrl: pasante.cvUrl 
+            });
+
+        } catch (error) {
+            return res.status(500).json({ 
+                error: 'Error al subir el CV',
+                details: error.message 
+            });
+        }
+    };
+
+    // ============================================================
+    // 📸 Subir/Actualizar Foto de Perfil
+    // ============================================================
+    static uploadFotoPerfil = async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'No se subió ninguna imagen' });
+            }
+
+            // Normalizamos la ruta
+            const filePath = req.file.path.replace(/\\/g, "/");
+
+            const pasante = await Pasante.findOneAndUpdate(
+                { userId: req.user.id },
+                { fotoPerfil: filePath },
+                { new: true }
+            );
+
+            if (!pasante) {
+                return res.status(404).json({ error: 'Perfil de pasante no encontrado' });
+            }
+
+            return res.status(200).json({ 
+                message: 'Foto de perfil actualizada', 
+                fotoPerfil: pasante.fotoPerfil 
+            });
+
+        } catch (error) {
+            return res.status(500).json({ 
+                error: 'Error al subir la foto',
+                details: error.message 
+            });
+        }
+    };
+
+    // ============================================================
+    // 📝 Actualizar perfil del pasante autenticado (Datos texto)
     // ============================================================
     static updateMyProfile = async (req, res) => {
         try {
@@ -52,41 +115,32 @@ export class PasanteController {
                 'sobreMi',
                 'habilidades',
                 'disponibilidad',
-                'fotoPerfil'
+                'fotoPerfil', // Se mantiene por compatibilidad
+                'cvUrl'       // Agregado por si se requiere update manual
             ];
 
-            // Se crea un objeto vacío que contendrá solo los campos permitidos
             const updates = {};
-
-            // Se recorren las claves enviadas en el body del request
             Object.keys(req.body).forEach(key => {
-                // Solo se agregan al objeto los campos que estén en la lista permitida
                 if (allowedUpdates.includes(key)) {
                     updates[key] = req.body[key];
                 }
             });
 
-            // Se actualiza el perfil del pasante según su userId
             const pasante = await Pasante.findOneAndUpdate(
-                { userId: req.user.id }, // Filtro de búsqueda
-                updates,                 // Datos a actualizar
-                { new: true, runValidators: true } // Retorna el documento actualizado y valida los campos
+                { userId: req.user.id }, 
+                updates,                 
+                { new: true, runValidators: true } 
             );
 
-            // Si no existe el perfil, se devuelve error 404
             if (!pasante) {
-                return res.status(404).json({ 
-                    error: 'Perfil de pasante no encontrado' 
-                });
+                return res.status(404).json({ error: 'Perfil de pasante no encontrado' });
             }
 
-            // Devuelve mensaje de éxito junto con el perfil actualizado
             return res.status(200).json({
                 message: 'Perfil actualizado exitosamente',
                 pasante
             });
         } catch (error) {
-            // Manejo de errores generales
             return res.status(500).json({ 
                 error: 'Error al actualizar perfil',
                 details: error.message 
@@ -99,33 +153,28 @@ export class PasanteController {
     // ============================================================
     static getAllPasantes = async (req, res) => {
         try {
-            // Se obtienen los parámetros de consulta para filtros y paginación
             const { 
-                page = 1,            // Página actual (por defecto 1)
-                limit = 10,          // Cantidad de resultados por página
-                provincia,           // Filtro por provincia
-                carrera,             // Filtro por carrera
-                disponibilidad       // Filtro por disponibilidad
+                page = 1, 
+                limit = 10, 
+                provincia, 
+                carrera, 
+                disponibilidad 
             } = req.query;
 
-            // Se construye un objeto de búsqueda dinámico
             const query = {};
             
             if (provincia) query.provincia = provincia;
-            if (carrera) query.carrera = new RegExp(carrera, 'i'); // Búsqueda insensible a mayúsculas/minúsculas
+            if (carrera) query.carrera = new RegExp(carrera, 'i'); 
             if (disponibilidad) query.disponibilidad = disponibilidad;
 
-            // Busca los pasantes que cumplan con los filtros
             const pasantes = await Pasante.find(query)
-                .select('-userId')              // Excluye el userId del resultado por seguridad
-                .limit(limit * 1)               // Limita la cantidad de resultados
-                .skip((page - 1) * limit)       // Salta los registros previos según la página
-                .sort({ createdAt: -1 });       // Ordena por fecha de creación (más recientes primero)
+                .select('-userId') 
+                .limit(limit * 1) 
+                .skip((page - 1) * limit) 
+                .sort({ createdAt: -1 }); 
 
-            // Cuenta el total de documentos que cumplen la búsqueda
             const count = await Pasante.countDocuments(query);
 
-            // Devuelve los pasantes junto con información de paginación
             return res.status(200).json({
                 pasantes,
                 totalPages: Math.ceil(count / limit),
@@ -146,18 +195,12 @@ export class PasanteController {
     static getPasanteById = async (req, res) => {
         try {
             const { id } = req.params;
-
-            // Busca un pasante por su ID
             const pasante = await Pasante.findById(id).select('-userId');
 
-            // Si no se encuentra el pasante, devuelve error 404
             if (!pasante) {
-                return res.status(404).json({ 
-                    error: 'Pasante no encontrado' 
-                });
+                return res.status(404).json({ error: 'Pasante no encontrado' });
             }
 
-            // Devuelve el perfil del pasante encontrado
             return res.status(200).json({ pasante });
         } catch (error) {
             return res.status(500).json({ 
@@ -172,20 +215,15 @@ export class PasanteController {
     // ============================================================
     static deleteMyAccount = async (req, res) => {
         try {
-            // 1️⃣ Elimina el perfil del pasante asociado al usuario autenticado
             await Pasante.findOneAndDelete({ userId: req.user.id });
-
-            // 2️⃣ Desactiva el usuario (no se borra del todo para mantener historial)
             await User.findByIdAndUpdate(req.user.id, { isActive: false });
 
-            // 3️⃣ Elimina la cookie del token de autenticación
             res.clearCookie('token', {
-                httpOnly: true, // Solo accesible desde el servidor
-                secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
-                sameSite: 'strict' // Evita envíos entre dominios
+                httpOnly: true, 
+                secure: process.env.NODE_ENV === 'production', 
+                sameSite: 'strict' 
             });
 
-            // 4️⃣ Envía mensaje de éxito
             return res.status(200).json({
                 message: 'Cuenta eliminada exitosamente'
             });

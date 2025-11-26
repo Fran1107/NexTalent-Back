@@ -45,6 +45,12 @@ const pasanteSchema = new mongoose.Schema({
         trim: true,
         default: '' // Valor por defecto vacío si no se proporciona
     },
+    // --- CAMPO AGREGADO ---
+    cvUrl: { 
+        type: String, 
+        default: '' // Guardará la ruta relativa, ej: "uploads/cv-123.pdf"
+    },
+    // ----------------------
     fotoPerfil: {
         type: String,
         default: '' // Puede contener la URL de la foto de perfil

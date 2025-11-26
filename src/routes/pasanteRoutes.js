@@ -3,7 +3,7 @@ import { PasanteController } from "../controllers/PasanteController.js";
 import { authenticate, isPasante } from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
 import { updatePasanteSchema } from "../schemas/validation.js";
-
+import upload from "../middlewares/multerConfig.js";
 const router = Router();
 
 // Rutas públicas
@@ -39,6 +39,26 @@ router.get(
     isPasante, 
     PasanteController.getMyProfile
 );
+
+// --- RUTAS DE ARCHIVOS (NUEVAS) ---
+// El string 'fotoPerfil' debe coincidir con el name del input en el Frontend
+router.post(
+    "/upload-foto", 
+    authenticate, 
+    isPasante, 
+    upload.single('fotoPerfil'), 
+    PasanteController.uploadFotoPerfil
+);
+
+// El string 'cv' debe coincidir con el name del input en el Frontend
+router.post(
+    "/upload-cv", 
+    authenticate, 
+    isPasante, 
+    upload.single('cv'), 
+    PasanteController.uploadCV
+);
+// --------------------------------
 
 router.put(
     "/profile/me", 
