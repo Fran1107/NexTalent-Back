@@ -362,12 +362,12 @@ export class PasanteController {
 // Obtener todas las pasantías favoritas del usuario logueado
     static getMyFavoritos = async (req, res) => {
   try {
-    const userId = req.user.id; 
+    const userId = req.user?.id 
 
     const favoritas = await Pasantia.find({ 
       favoritos: userId           // busca pasantías que incluyan al usuario en el array
     })
-    .populate("empresa_id", "nombre sector") 
+    .populate("empresaId", "nombre sector") 
     .lean();
 
     return res.json(favoritas);
