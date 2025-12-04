@@ -8,7 +8,6 @@ const router = Router();
 
 // Rutas públicas
 router.get("/", PasanteController.getAllPasantes);
-router.get("/:id", PasanteController.getPasanteById);
 
 // Favoritos de pasantías (solo pasantes)
 router.post(
@@ -26,9 +25,9 @@ router.delete(
 );
 
 router.get(
-  "/favoritos/my",
-  authenticate,
-  isPasante,
+  "/favoritos",
+  // authenticate,
+  // isPasante,
   PasanteController.getMyFavoritos
 );
 
@@ -75,4 +74,5 @@ router.delete(
     PasanteController.deleteMyAccount
 );
 
+router.get("/:id", PasanteController.getPasanteById);
 export default router;

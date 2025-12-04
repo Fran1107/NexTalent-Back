@@ -238,107 +238,81 @@ export class PasanteController {
     // ============================================================
     // Agregar una postulación a favoritos
     // ============================================================
-    static addFavorito = async (req, res) => {
-        try {
-            // Obtener IDs (pasantía del parámetro, pasante del token)
-            const { pasantiaId } = req.params
-            const pasanteId = req.user?.id
+  static addFavorito = async (req, res) => {
+    try {
+      const { pasantiaId } = req.params;
+      const pasanteId = req.user?.id;
 
-            // Validación de pasantía
-            if ( !pasantiaId || mongoose.Types.ObjectId.isValid(pasantiaId) ) {
-                return res.status(400).message('ID de pasantía incorrecto')
-            }
+      // Validación de IDs
+      if (!pasantiaId || !mongoose.Types.ObjectId.isValid(pasantiaId)) {
+        return res.status(400).json({ message: "ID de pasantía incorrecto" });
+      }
 
-            // Validación de pasante
-            if ( !pasanteId || mongoose.Types.ObjectId.isValid(pasanteId) ) {
-                return res.status(400).message('Usuario no autenticado')
-            }
+      if (!pasanteId || !mongoose.Types.ObjectId.isValid(pasanteId)) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
 
-      // -------------------------------------------------------
-      // 3️⃣  Agregar al array usando $addToSet (evita duplicados)
-      // -------------------------------------------------------
-      const actualizada = await Pasantia.findByIdAndUpdate(
+      // Agregar al array usando $addToSet (evita duplicados)
+      const pasantia = await Pasantia.findByIdAndUpdate(
         pasantiaId,
-        { $addToSet: { favoritos: pasanteId } }, // <-- $addToSet = “agregar si no está”
-        { new: true }                         // devuelve el doc actualizado
+        { $addToSet: { favoritos: pasanteId } },
+        { new: true }
       )
-        .populate("favoritos", "nombre email") // opcional: trae datos del pasante
+        .populate("favoritos", "nombre email")
         .exec();
 
-      if (!actualizada) {
+      if (!pasantia) {
         return res.status(404).json({ message: "Pasantía no encontrada" });
       }
 
-      // -------------------------------------------------------
-      // 4️⃣  Responder al cliente
-      // -------------------------------------------------------
       return res.status(200).json({
         message: "Pasantía añadida a favoritos",
-        totalFavoritos: actualizada.favoritos.length,
-        favoritos: actualizada.favoritos, // datos ya poblados
+        totalFavoritos: pasantia.favoritos.length,
+        favoritos: pasantia.favoritos,
         pasantia: {
-          _id: actualizada._id,
-          titulo: actualizada.titulo,
-          estado: actualizada.estado,
+          _id: pasantia._id,
+          titulo: pasantia.titulo,
+          estado: pasantia.estado,
         },
       });
     } catch (err) {
       console.error("[addFavorito] →", err);
-      return res
-        .status(500)
-        .json({ message: "Error interno del servidor", error: err.message });
+      return res.status(500).json({
+        message: "Error interno del servidor",
+        error: err.message,
+      });
     }
   };
 
+  // ============================================================
+  // Remover una pasantía de favoritos
+  // ============================================================
   static removeFavorito = async (req, res) => {
     try {
-      const { pasantiaId } = req.params; // <-- id de la pasantía
+      const { pasantiaId } = req.params;
+      const pasanteId = req.user?.id;
 
-      const pasanteId = req.user?.id;      // <-- el id del usuario autenticado
-
-      // -------------------------------------------------
-      // 1️⃣  Validaciones básicas
-      // -------------------------------------------------
-      if (!pasanteId) {
-        return res.status(403).json({
-          message: "Solo los pasantes pueden remover favoritos",
-        });
-      }
-
-      if (!mongoose.Types.ObjectId.isValid(pasantiaId)) {
-        return res
-          .status(400)
-          .json({ message: "pasantiaId no es un ObjectId válido" });
-      }
-
+      // Validaciones
       if (!pasanteId || !mongoose.Types.ObjectId.isValid(pasanteId)) {
-        return res
-          .status(401)
-          .json({ message: "Usuario no autenticado o id inválido" });
+        return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
-      // -------------------------------------------------
-      // 2️⃣  Quitar del array usando $pull (operación atómica)
-      // -------------------------------------------------
+      if (!pasantiaId || !mongoose.Types.ObjectId.isValid(pasantiaId)) {
+        return res.status(400).json({ message: "ID de pasantía incorrecto" });
+      }
+
+      // Quitar del array usando $pull
       const pasantia = await Pasantia.findByIdAndUpdate(
         pasantiaId,
-        { $pull: { favoritos: pasanteId } }, // quita el ObjectId del array
-        { new: true }                       // devuelve el documento actualizado
+        { $pull: { favoritos: pasanteId } },
+        { new: true }
       )
-        .populate("favoritos", "nombre email") // opcional: datos del pasante
+        .populate("favoritos", "nombre email")
         .exec();
 
-      // -------------------------------------------------
-      // 3️⃣  Manejo de resultados
-      // -------------------------------------------------
       if (!pasantia) {
-        return res
-          .status(404)
-          .json({ message: "Pasantía no encontrada" });
+        return res.status(404).json({ message: "Pasantía no encontrada" });
       }
-
-      // Si el id no estaba en el array, `favoritos` no cambia,
-      // pero seguimos devolviendo 200.
 
       return res.status(200).json({
         message: "Favorito removido",
@@ -359,24 +333,30 @@ export class PasanteController {
     }
   };
 
-// Obtener todas las pasantías favoritas del usuario logueado
-    static getMyFavoritos = async (req, res) => {
-  try {
-    const userId = req.user?.id 
+  // ============================================================
+  // Obtener todas las pasantías favoritas del usuario logueado
+  // ============================================================
+  static getMyFavoritos = async (req, res) => {
+    try {
+      // Para pruebas sin token, se puede usar un ID fijo
+      const userId = req.user?.id || "651234abcd1234abcd567893";
 
-    const favoritas = await Pasantia.find({ 
-      favoritos: userId           // busca pasantías que incluyan al usuario en el array
-    })
-    .populate("empresaId", "nombre sector") 
-    .lean();
+      // Buscar pasantías donde el usuario esté en favoritos
+      const favoritas = await Pasantia.find({ favoritos: userId })
+        .populate("empresaId", "nombre sector")
+        .lean();
 
-    return res.json(favoritas);
+      // Agregar un campo "esFavorito" para el frontend
+      const data = favoritas.map(p => ({
+        ...p,
+        esFavorito: p.favoritos.some(f => f.toString() === userId),
+      }));
 
-  } catch (error) {
-    console.error("Error al obtener favoritos:", error);
-    return res.status(500).json({ message: "Error interno del servidor" });
-  }
-};
+      return res.json(data);
 
+    } catch (error) {
+      console.error("Error al obtener favoritos:", error);
+      return res.status(500).json({ message: "Error interno del servidor" });
+    }
+  };
 }
-
