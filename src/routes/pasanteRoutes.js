@@ -30,6 +30,8 @@ router.get(
   // isPasante,
   PasanteController.getMyFavoritos
 );
+router.get("/pasantes", PasanteController.getAllPasantes);
+router.get("/pasantes/:id", PasanteController.getPasanteById);
 
 // Rutas protegidas (requieren autenticación y ser pasante)
 router.get(

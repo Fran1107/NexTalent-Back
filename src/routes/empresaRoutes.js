@@ -25,11 +25,11 @@ const router = Router();
 // Obtener todas las empresas
 // - No requiere autenticación
 // - Ideal para mostrar en un listado público
-router.get("/", EmpresaController.getAllEmpresas);
+router.get("/empresa", EmpresaController.getAllEmpresas);
 
 // Obtener una empresa por ID
 // - También es pública, por si se necesita mostrar el perfil de una empresa específica
-router.get("/:id", EmpresaController.getEmpresaById);
+router.get("/empresa/:id", EmpresaController.getEmpresaById);
 
 // =========================
 // RUTAS PROTEGIDAS (solo empresa autenticada)

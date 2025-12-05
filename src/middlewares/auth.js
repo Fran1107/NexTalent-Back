@@ -7,12 +7,12 @@ import User from '../model/User.js'
 
 // Middleware principal de autenticación
 export const authenticate = async (req, res, next) => {
-    console.log(req.cookies) // 🔍 Muestra en consola las cookies enviadas por el navegador
+    //console.log(req.cookies) // 🔍 Muestra en consola las cookies enviadas por el navegador
 
     try {
         // 1️⃣ Obtener el token JWT desde las cookies del navegador
         const token = req.cookies.token;
-        console.log(token) // Para depuración: muestra el token recibido
+        //console.log(token) // Para depuración: muestra el token recibido
 
         // 2️⃣ Si no hay token, el usuario no está autenticado
         if (!token) {

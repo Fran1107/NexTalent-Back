@@ -12,13 +12,27 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,            // Contraseña en formato hash (nunca se guarda en texto plano)
-        required: true           // Campo obligatorio
+        required: false           // Campo obligatorio
+    },
+    googleId: { 
+        type: String,
+        unique: true,
+        sparse: true    // Permite que varios usuarios tengan googleId null
+    }, 
+    linkedinId: { 
+        type: String, 
+        unique: true, 
+        sparse: true 
     },
     userType: {
         type: String,            // Define el tipo o rol del usuario en la plataforma
         enum: ['pasante', 'empresa', 'admin'], // Solo puede ser uno de estos tres valores
-        required: true,
-        default: 'pasante'       // Si no se indica, por defecto será un pasante
+
+        default: null       // Si no se indica, por defecto será un pasante
+    },
+    isProfileComplete: {
+        type: Boolean,
+        default: false
     },
     isActive: {
         type: Boolean,           // Indica si el usuario tiene la cuenta activa o deshabilitada
