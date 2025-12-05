@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import session from 'express-session'
+import passport from "passport";
 
 import { corsConfig } from "./src/config/cors.js";
 import { connectDB } from "./src/config/db.js";

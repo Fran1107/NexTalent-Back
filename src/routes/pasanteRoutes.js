@@ -7,8 +7,8 @@ import { updatePasanteSchema } from "../schemas/validation.js";
 const router = Router();
 
 // Rutas públicas
-router.get("/", PasanteController.getAllPasantes);
-router.get("/:id", PasanteController.getPasanteById);
+router.get("/pasantes", PasanteController.getAllPasantes);
+router.get("/pasantes/:id", PasanteController.getPasanteById);
 
 // Rutas protegidas (requieren autenticación y ser pasante)
 router.get(
