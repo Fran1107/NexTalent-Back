@@ -8,6 +8,7 @@ import { connectDB } from "./src/config/db.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import pasanteRoutes from "./src/routes/pasanteRoutes.js";
 import empresaRoutes from "./src/routes/empresaRoutes.js";
+import reviewRoutes from "./src/routes/reviewsRoutes.js";
 
 // Configura para las variables de entorno
 dotenv.config()
@@ -29,10 +30,13 @@ server.use(express.json())
 server.use("/api/auth", authRoutes)
 server.use("/api/pasantes", pasanteRoutes)
 server.use("/api/empresas", empresaRoutes)
+server.use("/api/resenas", reviewRoutes);
+
 
 // Ruta de prueba
 server.get("/", (req, res) => {
     res.json({ message: "API Nextalent - Conectando talento con oportunidades" });
 })
 
-export default server
+
+export default server;

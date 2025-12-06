@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 // Schema para registro de pasante
@@ -67,3 +68,19 @@ export const updateEmpresaSchema = z.object({
     telefono: z.string().min(8).optional(),
     cantidadEmpleados: z.enum(['1-10', '11-50', '51-200', '201-500', '500+']).optional()
 });
+
+// // Schema para resena segun funcionalidad 5 (SIN EFECTO)
+
+
+// export const crearResenaSchema = z.object({
+//   empresaId: z.string().min(1, "Empresa requerida."),
+//   rating: z.number().min(1).max(5),
+//   titulo: z.string().max(100).optional(),
+//   comentario: z.string().min(5, "El comentario debe tener al menos 5 caracteres.")
+// });
+
+// export const actualizarResenaSchema = z.object({
+//   rating: z.number().min(1).max(5).optional(),
+//   titulo: z.string().max(100).optional(),
+//   comentario: z.string().min(5, "El comentario debe tener al menos 5 caracteres.").optional()
+// });
