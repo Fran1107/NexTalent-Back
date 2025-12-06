@@ -45,6 +45,12 @@ const pasanteSchema = new mongoose.Schema({
         trim: true,
         default: '' // Valor por defecto vacío si no se proporciona
     },
+    // --- CAMPO AGREGADO ---
+    cvUrl: { 
+        type: String, 
+        default: '' // Guardará la ruta relativa, ej: "uploads/cv-123.pdf"
+    },
+    // ----------------------
     fotoPerfil: {
         type: String,
         default: '' // Puede contener la URL de la foto de perfil
@@ -70,6 +76,11 @@ const pasanteSchema = new mongoose.Schema({
         default: 'flexible' // Si no se indica, será "flexible"
     },
     favoritos: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Pasantia',
+        required: false
+    },
+    postulaciones: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Postulacion',
         required: false

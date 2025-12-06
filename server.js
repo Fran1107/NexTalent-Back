@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import session from 'express-session'
+import passport from "passport";
 
 import { corsConfig } from "./src/config/cors.js";
 import { connectDB } from "./src/config/db.js";
@@ -30,6 +32,10 @@ server.use(cookieParser())
 server.use(express.json())
 
 // Rutas
+// --- SERVIR ARCHIVOS ESTÁTICOS ---
+// Esto permite acceder a http://localhost:PORT/uploads/nombre-archivo.jpg
+server.use('/uploads', express.static('uploads'));
+
 server.use("/api/auth", authRoutes)
 server.use("/api/pasantes", pasanteRoutes)
 server.use("/api/empresas", empresaRoutes)

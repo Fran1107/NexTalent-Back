@@ -336,4 +336,183 @@ export class AuthController {
             });
         }
     };
+
+    // COMPLETAR PERFIL (Google Onboarding)
+    static completeGoogleProfile = async (req, res) => {
+        try {
+            // 1. Obtenemos el ID del usuario desde el token (gracias al middleware authenticate)
+            const userId = req.user.id;
+            
+            // 2. Extraemos el tipo de usuario y el resto de los datos del formulario
+            const { userType, ...profileData } = req.body;
+
+            // Validamos que envíen un tipo de usuario válido
+            if (!['pasante', 'empresa'].includes(userType)) {
+                return res.status(400).json({ error: 'Tipo de usuario inválido' });
+            }
+
+            // 3. Buscamos y actualizamos el usuario base (User)
+            const user = await User.findById(userId);
+            
+            if (!user) {
+                return res.status(404).json({ error: 'Usuario no encontrado' });
+            }
+
+            // Actualizamos su rol y marcamos el perfil como completo
+            user.userType = userType;
+            user.isProfileComplete = true; 
+            await user.save();
+
+            // 4. Creamos el perfil específico según el rol elegido
+            if (userType === 'pasante') {
+                await Pasante.create({
+                    userId: user._id,
+                    nombre: profileData.nombre,
+                    apellido: profileData.apellido,
+                    telefono: profileData.telefono || '', // Manejo de opcionales
+                    carrera: profileData.carrera,
+                    provincia: profileData.provincia, 
+                    localidad: profileData.localidad,
+                    // Si la fecha viene como string, asegúrate de convertirla, o deja que Mongoose lo intente
+                    fechaNacimiento: profileData.fechaNacimiento ? new Date(profileData.fechaNacimiento) : undefined,
+                    linkedinUrl: profileData.linkedinUrl || '',
+                    sobreMi: profileData.sobreMi || ''
+                });
+
+            } else if (userType === 'empresa') {
+                await Empresa.create({
+                    userId: user._id,
+                    nombre: profileData.nombre, // Nombre comercial
+                    razonSocial: profileData.razonSocial,
+                    sector: profileData.sector,
+                    descripcion: profileData.descripcion || '',
+                    provincia: profileData.provincia,
+                    localidad: profileData.localidad,
+                    calle: profileData.calle,
+                    numero: profileData.numero,
+                    codigoPostal: profileData.codigoPostal,
+                    telefono: profileData.telefono,
+                    modalidadTrabajo: profileData.modalidadTrabajo, 
+                    cantidadEmpleados: profileData.cantidadEmpleados
+                });
+            }
+
+            // 5. ¡Listo! Devolvemos éxito
+            return res.status(200).json({ 
+                message: 'Perfil completado exitosamente',
+                user: {
+                    id: user._id,
+                    email: user.email,
+                    userType: user.userType,
+                    isProfileComplete: user.isProfileComplete
+                }
+            });
+
+        } catch (error) {
+            console.error("Error en completeGoogleProfile:", error);
+            // Si hubo un error (ej: validación de Mongoose), devolvemos 500 o 400
+            return res.status(500).json({ 
+                error: 'Error al completar el perfil',
+                details: error.message 
+            });
+        }
+    };
+
+    // LOGIN CON LINKEDIN (MANUAL - SOLUCIÓN DEFINITIVA)
+    static linkedinCallback = async (req, res) => {
+        try {
+            const { code, error } = req.query;
+
+            // 1. Manejo de errores de LinkedIn
+            if (error) {
+                console.error("❌ LinkedIn devolvió error:", error);
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=${error}`);
+            }
+            if (!code) {
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_code`);
+            }
+
+            // 2. Canjear el 'code' por un 'accessToken'
+            // LinkedIn exige form-urlencoded
+            const tokenParams = new URLSearchParams({
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: 'http://localhost:3000/api/auth/linkedin/callback', // DEBE SER EXACTA
+                client_id: process.env.LINKEDIN_CLIENT_ID,
+                client_secret: process.env.LINKEDIN_CLIENT_SECRET
+            });
+
+            const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: tokenParams
+            });
+
+            if (!tokenResponse.ok) {
+                const errData = await tokenResponse.json();
+                console.error("❌ Error obteniendo token:", errData);
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=token_failed`);
+            }
+
+            const tokenData = await tokenResponse.json();
+            const accessToken = tokenData.access_token;
+
+            // 3. Obtener datos del usuario (UserInfo - Endpoint NUEVO)
+            const userResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+
+            if (!userResponse.ok) {
+                console.error("❌ Error obteniendo perfil:", await userResponse.text());
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=profile_failed`);
+            }
+
+            const profile = await userResponse.json();
+            // El perfil llega así: { sub: 'ID', name: 'Nombre', email: 'correo', ... }
+            
+            console.log("✅ Perfil LinkedIn recibido:", profile.email);
+
+            // 4. Buscar o Crear Usuario (Misma lógica que tenías)
+            let user = await User.findOne({ linkedinId: profile.sub }); // 'sub' es el ID
+
+            if (!user && profile.email) {
+                user = await User.findOne({ email: profile.email });
+                if (user) {
+                    user.linkedinId = profile.sub;
+                    await user.save();
+                }
+            }
+
+            if (!user) {
+                user = await User.create({
+                    email: profile.email,
+                    linkedinId: profile.sub,
+                    userType: null,
+                    isProfileComplete: false,
+                });
+            }
+
+            // 5. Generar JWT y Cookie
+            const token = generateToken(user._id, user.userType);
+
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000 
+            });
+
+            // 6. Redirección final
+            if (!user.isProfileComplete || !user.userType) {
+                return res.redirect(`${process.env.FRONTEND_URL}onboarding`);
+            } else {
+                const target = user.userType === 'empresa' ? '/dashboard-empresa' : '/dashboard';
+                return res.redirect(`${process.env.FRONTEND_URL}${target}`);
+            }
+
+        } catch (error) {
+            console.error("🛑 Error crítico en LinkedIn Callback:", error);
+            return res.redirect(`${process.env.FRONTEND_URL}/login?error=server_error`);
+        }
+    };
 }

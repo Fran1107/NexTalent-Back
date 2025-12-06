@@ -37,6 +37,26 @@ logo: {
     required: true
   },
   estado: {
+    pasantiaId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Pasantia',
+        required: true
+    },
+    usuarioId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Pasante',
+        required: true
+    },
+    fechaPostulacion: {
+        type: Date,
+        default: Date.now
+    },
+    estado: {
+        type: String,
+        enum: ['En revisión', 'Aceptado', 'Rechazado'],
+        default: ''
+    },
+      mensaje: {
     type: String,
     enum: ["Activa", "Pausada", "Cerrada"],
     default: "Activa"
