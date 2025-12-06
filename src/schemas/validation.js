@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 // Schema para registro de pasante
@@ -76,3 +77,19 @@ export const createPostulacionSchema = z.object({
 export const updateEstadoSchema = z.object({
   estado: z.enum(["En revisión", "Aceptado", "Rechazado"])
 });
+
+// // Schema para resena segun funcionalidad 5 (SIN EFECTO)
+
+
+// export const crearResenaSchema = z.object({
+//   empresaId: z.string().min(1, "Empresa requerida."),
+//   rating: z.number().min(1).max(5),
+//   titulo: z.string().max(100).optional(),
+//   comentario: z.string().min(5, "El comentario debe tener al menos 5 caracteres.")
+// });
+
+// export const actualizarResenaSchema = z.object({
+//   rating: z.number().min(1).max(5).optional(),
+//   titulo: z.string().max(100).optional(),
+//   comentario: z.string().min(5, "El comentario debe tener al menos 5 caracteres.").optional()
+// });

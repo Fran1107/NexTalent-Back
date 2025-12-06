@@ -14,6 +14,7 @@ import postulacionRoutes from "./src/routes/postulacionRoutes.js";
 
 
 
+import reviewRoutes from "./src/routes/reviewsRoutes.js";
 
 // Configura para las variables de entorno
 dotenv.config()
@@ -40,10 +41,13 @@ server.use("/api/auth", authRoutes)
 server.use("/api/pasantes", pasanteRoutes)
 server.use("/api/empresas", empresaRoutes)
 server.use("/api/postulaciones", postulacionRoutes);
+server.use("/api/resenas", reviewRoutes);
+
 
 // Ruta de prueba
 server.get("/", (req, res) => {
     res.json({ message: "API Nextalent - Conectando talento con oportunidades" });
 })
 
-export default server
+
+export default server;
