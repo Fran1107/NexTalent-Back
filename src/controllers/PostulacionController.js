@@ -83,6 +83,7 @@ export const getAllPostulaciones = async (req, res) => {
 
     res.json(ofertas);
   } catch (error) {
+    console.error("error get all post: ", error)
     res.status(500).json({ error: "Error al obtener las ofertas" });
   }
 };

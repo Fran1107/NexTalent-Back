@@ -13,14 +13,14 @@ const router = express.Router();
 
 
 router.get("/", getAllPostulaciones);
+router.get("/empresa/mine", authenticate, isEmpresa, getMyPostulaciones);
+
 router.get("/:id", getPostulacionById);
 
-router.post("/", createPostulacion);
-
+router.post("/create", createPostulacion);
 
 router.put("/:id", authenticate, isEmpresa, updatePostulacion);
 router.delete("/:id", authenticate, isEmpresa, deletePostulacion);
-router.get("/empresa/mine", authenticate, isEmpresa, getMyPostulaciones);
 
 router.get("/test", (req, res) => res.json({ ok: true, msg: "postulaciones router ok" }));
 
