@@ -8,6 +8,10 @@ import { connectDB } from "./src/config/db.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import pasanteRoutes from "./src/routes/pasanteRoutes.js";
 import empresaRoutes from "./src/routes/empresaRoutes.js";
+import postulacionRoutes from "./src/routes/postulacionRoutes.js";
+
+
+
 
 // Configura para las variables de entorno
 dotenv.config()
@@ -29,6 +33,7 @@ server.use(express.json())
 server.use("/api/auth", authRoutes)
 server.use("/api/pasantes", pasanteRoutes)
 server.use("/api/empresas", empresaRoutes)
+server.use("/api/postulaciones", postulacionRoutes);
 
 // Ruta de prueba
 server.get("/", (req, res) => {

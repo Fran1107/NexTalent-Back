@@ -67,3 +67,12 @@ export const updateEmpresaSchema = z.object({
     telefono: z.string().min(8).optional(),
     cantidadEmpleados: z.enum(['1-10', '11-50', '51-200', '201-500', '500+']).optional()
 });
+
+export const createPostulacionSchema = z.object({
+  pasantiaId: z.string().min(1),
+  mensaje: z.string().max(1000).optional()
+});
+
+export const updateEstadoSchema = z.object({
+  estado: z.enum(["En revisión", "Aceptado", "Rechazado"])
+});
