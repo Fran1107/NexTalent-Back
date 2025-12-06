@@ -61,7 +61,7 @@ logo: {
     enum: ["Activa", "Pausada", "Cerrada"],
     default: "Activa"
   }
-}, { timestamps: true });
+},  } , { timestamps: true })
 
 const Postulacion = mongoose.model("Postulacion", postulacionSchema);
 export default Postulacion;
