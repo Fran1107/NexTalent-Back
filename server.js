@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import session from 'express-session'
 import passport from "passport";
-
+import aplicacionRoutes from "./src/routes/aplicacionRoutes.js";
 import { corsConfig } from "./src/config/cors.js";
 import { connectDB } from "./src/config/db.js";
 
@@ -42,6 +42,7 @@ server.use("/api/pasantes", pasanteRoutes)
 server.use("/api/empresas", empresaRoutes)
 server.use("/api/postulaciones", postulacionRoutes);
 server.use("/api/resenas", reviewRoutes);
+server.use("/api/aplicaciones", aplicacionRoutes);
 
 
 // Ruta de prueba

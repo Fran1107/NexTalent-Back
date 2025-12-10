@@ -1,28 +1,52 @@
-import express from "express";
+import { Router } from "express"; // Nota: usa Router directamente si prefieres, o express.Router()
 import { authenticate, isEmpresa } from "../middlewares/auth.js";
-import {
-  createPostulacion,
-  updatePostulacion,
-  deletePostulacion,
-  getMyPostulaciones,
-  getAllPostulaciones,
-  getPostulacionById
-} from "../controllers/PostulacionController.js";
+import { validate } from "../middlewares/validate.js"; // Asegúrate de importar esto
+import { createPostulacionSchema, updatePostulacionSchema } from "../schemas/validation.js"; // Y los schemas
 
-const router = express.Router();
+// 👇 CAMBIO IMPORTANTE: Importamos la CLASE entera, no los métodos sueltos
+import { PostulacionController } from "../controllers/PostulacionController.js";
+
+const router = Router();
 
 
-router.get("/", getAllPostulaciones);
-router.get("/empresa/mine", authenticate, isEmpresa, getMyPostulaciones);
+// --- RUTAS PÚBLICAS ---
+router.get("/", PostulacionController.getAllPostulaciones);
+router.get("/:id", PostulacionController.getPostulacionById);
 
-router.get("/:id", getPostulacionById);
+// --- RUTAS PROTEGIDAS (EMPRESA) ---
 
-router.post("/create", createPostulacion);
+// Crear oferta
+router.post(
+    "/", 
+    authenticate, 
+    isEmpresa, 
+    validate(createPostulacionSchema), 
+    PostulacionController.createPostulacion
+);
 
-router.put("/:id", authenticate, isEmpresa, updatePostulacion);
-router.delete("/:id", authenticate, isEmpresa, deletePostulacion);
+// Ver mis ofertas (Dashboard)
+router.get(
+    "/dashboard/mis-ofertas", 
+    authenticate, 
+    isEmpresa, 
+    PostulacionController.getMyPostulaciones
+);
 
-router.get("/test", (req, res) => res.json({ ok: true, msg: "postulaciones router ok" }));
+// Editar oferta
+router.put(
+    "/:id", 
+    authenticate, 
+    isEmpresa, 
+    validate(updatePostulacionSchema), 
+    PostulacionController.updatePostulacion
+);
 
+// Eliminar oferta
+router.delete(
+    "/:id", 
+    authenticate, 
+    isEmpresa, 
+    PostulacionController.deletePostulacion
+);
 
 export default router;

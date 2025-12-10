@@ -69,14 +69,40 @@ export const updateEmpresaSchema = z.object({
     cantidadEmpleados: z.enum(['1-10', '11-50', '51-200', '201-500', '500+']).optional()
 });
 
+//Esto es para validar que se cree una postulacion correctamente
 export const createPostulacionSchema = z.object({
-  pasantiaId: z.string().min(1),
-  mensaje: z.string().max(1000).optional()
+    titulo: z.string().min(5, "El título debe tener al menos 5 caracteres"),
+    descripcion: z.string().min(20, "La descripción es muy corta"),
+    requisitos: z.array(z.string()).optional(),
+    lugar: z.object({
+        provincia: z.string(),
+        localidad: z.string()
+    }),
+    modalidad: z.enum(["Hibrido", "Remoto", "Presencial"])
 });
+
+
+//Estos son los estados de la postulaciones, se puede editar
+export const updatePostulacionSchema = createPostulacionSchema.partial().extend({
+    estado: z.enum(["Activa", "Pausada", "Cerrada"]).optional()
+});
+
 
 export const updateEstadoSchema = z.object({
   estado: z.enum(["En revisión", "Aceptado", "Rechazado"])
 });
+
+
+//Esto es para validar que las aplicaciones a las postulaciones esten realizadas correctamente
+export const createAplicacionSchema = z.object({
+    postulacionId: z.string({ required_error: "El ID de la postulación es obligatorio" }),
+    mensaje: z.string().max(1000, "El mensaje es muy largo").optional()
+});
+
+export const updateEstadoAplicacionSchema = z.object({
+    estado: z.enum(['Enviada', 'En revision', 'Rechazada', 'Aceptada'])
+});
+
 
 // // Schema para resena segun funcionalidad 5 (SIN EFECTO)
 
