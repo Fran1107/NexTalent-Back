@@ -75,11 +75,12 @@ const pasanteSchema = new mongoose.Schema({
         enum: ['tiempo_completo', 'medio_tiempo', 'flexible'], // Solo puede tener uno de estos valores
         default: 'flexible' // Si no se indica, será "flexible"
     },
-    favoritos: {
+    favoritos: [
+    {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Pasantia',
-        required: false
-    },
+        ref: "Postulacion",
+    }
+    ],
     postulaciones: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Postulacion',

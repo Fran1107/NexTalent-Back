@@ -36,6 +36,12 @@ logo: {
     enum: ["Hibrido", "Remoto", "Presencial"],
     required: true
   },
+  duracion: {
+    type: String
+  },
+  isActive: {
+    type: Boolean
+  },
   estado: {
     pasantiaId: {
         type: mongoose.Schema.Types.ObjectId,

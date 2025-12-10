@@ -11,14 +11,14 @@ router.get("/", PasanteController.getAllPasantes);
 
 // Favoritos de pasantías (solo pasantes)
 router.post(
-  "/favoritos/:pasantiaId",
+  "/favoritos/:postulacionId",
   authenticate,
   isPasante,
   PasanteController.addFavorito
 );
 
 router.delete(
-  "/favoritos/:pasantiaId",
+  "/favoritos/:postulacionId",
   authenticate,
   isPasante,
   PasanteController.removeFavorito
@@ -26,8 +26,8 @@ router.delete(
 
 router.get(
   "/favoritos",
-  // authenticate,
-  // isPasante,
+  authenticate,
+  isPasante,
   PasanteController.getMyFavoritos
 );
 router.get("/pasantes", PasanteController.getAllPasantes);

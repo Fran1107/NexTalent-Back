@@ -3,8 +3,8 @@
 // User -> contiene los datos base del usuario (email, password, rol, etc.)
 import mongoose from 'mongoose';
 import Pasante from '../model/Pasante.js';
-import Pasantia from '../model/Pasantia.js';
 import User from '../model/User.js';
+import Postulacion from "../model/Postulacion.js"
 
 // Controlador encargado de manejar todas las operaciones relacionadas con los pasantes
 export class PasanteController {
@@ -235,46 +235,48 @@ export class PasanteController {
         }
     };
 
-    // ============================================================
-    // Agregar una postulación a favoritos
-    // ============================================================
+  // ============================================================
+  // Agregar una postulación a favoritos del pasante
+  // ============================================================
   static addFavorito = async (req, res) => {
     try {
-      const { pasantiaId } = req.params;
-      const pasanteId = req.user?.id;
+      const { postulacionId } = req.params;
+      const userId = req.user?.id;
 
-      // Validación de IDs
-      if (!pasantiaId || !mongoose.Types.ObjectId.isValid(pasantiaId)) {
-        return res.status(400).json({ message: "ID de pasantía incorrecto" });
+      if (!postulacionId || !mongoose.Types.ObjectId.isValid(postulacionId)) {
+        return res.status(400).json({ message: "ID de postulación incorrecto" });
       }
-
-      if (!pasanteId || !mongoose.Types.ObjectId.isValid(pasanteId)) {
+      if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
-      // Agregar al array usando $addToSet (evita duplicados)
-      const pasantia = await Pasantia.findByIdAndUpdate(
-        pasantiaId,
-        { $addToSet: { favoritos: pasanteId } },
+      // Actualizar el array de favoritos del pasante
+      const pasante = await Pasante.findOneAndUpdate(
+        { userId },
+        { $addToSet: { favoritos: postulacionId } }, // evita duplicados
         { new: true }
-      )
-        .populate("favoritos", "nombre email")
-        .exec();
+      ).lean();
 
-      if (!pasantia) {
-        return res.status(404).json({ message: "Pasantía no encontrada" });
+      if (!pasante) {
+        return res.status(404).json({ message: "Perfil de pasante no encontrado" });
       }
 
+      // Obtener las postulaciones favoritas actualizadas
+      const favoritas = await Postulacion.find(
+        { _id: { $in: pasante.favoritos } },
+        "titulo empresa descripcion estado duracion modalidad logo"
+      ).lean();
+
+      const data = favoritas.map(p => ({
+        ...p,
+        esFavorito: true
+      }));
+
       return res.status(200).json({
-        message: "Pasantía añadida a favoritos",
-        totalFavoritos: pasantia.favoritos.length,
-        favoritos: pasantia.favoritos,
-        pasantia: {
-          _id: pasantia._id,
-          titulo: pasantia.titulo,
-          estado: pasantia.estado,
-        },
+        message: "Postulación añadida a favoritos",
+        favoritos: data
       });
+
     } catch (err) {
       console.error("[addFavorito] →", err);
       return res.status(500).json({
@@ -285,45 +287,47 @@ export class PasanteController {
   };
 
   // ============================================================
-  // Remover una pasantía de favoritos
+  // Remover una postulación de favoritos del pasante
   // ============================================================
   static removeFavorito = async (req, res) => {
     try {
-      const { pasantiaId } = req.params;
-      const pasanteId = req.user?.id;
+      const { postulacionId } = req.params;
+      const userId = req.user?.id;
 
-      // Validaciones
-      if (!pasanteId || !mongoose.Types.ObjectId.isValid(pasanteId)) {
+      if (!postulacionId || !mongoose.Types.ObjectId.isValid(postulacionId)) {
+        return res.status(400).json({ message: "ID de postulación incorrecto" });
+      }
+      if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
-      if (!pasantiaId || !mongoose.Types.ObjectId.isValid(pasantiaId)) {
-        return res.status(400).json({ message: "ID de pasantía incorrecto" });
-      }
-
-      // Quitar del array usando $pull
-      const pasantia = await Pasantia.findByIdAndUpdate(
-        pasantiaId,
-        { $pull: { favoritos: pasanteId } },
+      // Quitar del array de favoritos del pasante
+      const pasante = await Pasante.findOneAndUpdate(
+        { userId },
+        { $pull: { favoritos: postulacionId } },
         { new: true }
-      )
-        .populate("favoritos", "nombre email")
-        .exec();
+      ).lean();
 
-      if (!pasantia) {
-        return res.status(404).json({ message: "Pasantía no encontrada" });
+      if (!pasante) {
+        return res.status(404).json({ message: "Perfil de pasante no encontrado" });
       }
+
+      // Obtener las postulaciones favoritas restantes
+      const favoritas = await Postulacion.find(
+        { _id: { $in: pasante.favoritos } },
+        "titulo empresa descripcion estado duracion modalidad logo"
+      ).lean();
+
+      const data = favoritas.map(p => ({
+        ...p,
+        esFavorito: true
+      }));
 
       return res.status(200).json({
-        message: "Favorito removido",
-        totalFavoritos: pasantia.favoritos.length,
-        favoritos: pasantia.favoritos,
-        pasantia: {
-          _id: pasantia._id,
-          titulo: pasantia.titulo,
-          estado: pasantia.estado,
-        },
+        message: "Postulación removida de favoritos",
+        favoritos: data
       });
+
     } catch (err) {
       console.error("[removeFavorito] →", err);
       return res.status(500).json({
@@ -333,30 +337,49 @@ export class PasanteController {
     }
   };
 
-  // ============================================================
-  // Obtener todas las pasantías favoritas del usuario logueado
-  // ============================================================
-  static getMyFavoritos = async (req, res) => {
-    try {
-      // Para pruebas sin token, se puede usar un ID fijo
-      const userId = req.user?.id || "651234abcd1234abcd567893";
 
-      // Buscar pasantías donde el usuario esté en favoritos
-      const favoritas = await Pasantia.find({ favoritos: userId })
-        .populate("empresaId", "nombre sector")
-        .lean();
+    // ============================================================
+    // Obtener todas las postulaciones favoritas del usuario logueado
+    // ============================================================
+static getMyFavoritos = async (req, res) => {
+  try {
+    const userId = req.user?.id; // ID del User autenticado
 
-      // Agregar un campo "esFavorito" para el frontend
-      const data = favoritas.map(p => ({
-        ...p,
-        esFavorito: p.favoritos.some(f => f.toString() === userId),
-      }));
-
-      return res.json(data);
-
-    } catch (error) {
-      console.error("Error al obtener favoritos:", error);
-      return res.status(500).json({ message: "Error interno del servidor" });
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({ message: "Usuario no autenticado" });
     }
-  };
-}
+
+    // 1. Obtener el Pasante logueado para acceder a su array de favoritos
+    const pasante = await Pasante.findOne({ userId }).lean();
+
+    if (!pasante) {
+      return res.status(404).json({ message: "Perfil de pasante no encontrado" });
+    }
+
+    // 2. Si no tiene favoritos, retornar array vacío
+    if (!pasante.favoritos || pasante.favoritos.length === 0) {
+      return res.json([]);
+    }
+
+    // 3. Buscar las Postulaciones que están en el array de favoritos del pasante
+    const favoritas = await Postulacion.find(
+      { _id: { $in: pasante.favoritos } },
+      "titulo empresa descripcion estado duracion modalidad logo" // SOLO estos campos
+    )
+    .lean();
+
+    // 4. Mapear los datos para el frontend
+    const data = favoritas.map(p => ({
+      ...p,
+      esFavorito: true // todas son favoritas
+    }));
+
+    return res.json(data);
+
+  } catch (error) {
+    console.error("Error al obtener favoritos:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+  }
