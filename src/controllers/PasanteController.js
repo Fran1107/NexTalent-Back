@@ -236,106 +236,145 @@ export class PasanteController {
     };
 
   // ============================================================
-  // Agregar una postulación a favoritos del pasante
-  // ============================================================
-  static addFavorito = async (req, res) => {
-    try {
-      const { postulacionId } = req.params;
-      const userId = req.user?.id;
+// Agregar una postulación a favoritos del pasante
+// ============================================================
+static addFavorito = async (req, res) => {
+  try {
+    const { postulacionId } = req.params;
+    const userId = req.user?.id;
 
-      if (!postulacionId || !mongoose.Types.ObjectId.isValid(postulacionId)) {
-        return res.status(400).json({ message: "ID de postulación incorrecto" });
-      }
-      if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(401).json({ message: "Usuario no autenticado" });
-      }
+    console.log('📥 addFavorito - userId:', userId, 'postulacionId:', postulacionId);
 
-      // Actualizar el array de favoritos del pasante
-      const pasante = await Pasante.findOneAndUpdate(
-        { userId },
-        { $addToSet: { favoritos: postulacionId } }, // evita duplicados
-        { new: true }
-      ).lean();
-
-      if (!pasante) {
-        return res.status(404).json({ message: "Perfil de pasante no encontrado" });
-      }
-
-      // Obtener las postulaciones favoritas actualizadas
-      const favoritas = await Postulacion.find(
-        { _id: { $in: pasante.favoritos } },
-        "titulo empresa descripcion estado duracion modalidad logo"
-      ).lean();
-
-      const data = favoritas.map(p => ({
-        ...p,
-        esFavorito: true
-      }));
-
-      return res.status(200).json({
-        message: "Postulación añadida a favoritos",
-        favoritos: data
-      });
-
-    } catch (err) {
-      console.error("[addFavorito] →", err);
-      return res.status(500).json({
-        message: "Error interno del servidor",
-        error: err.message,
-      });
+    if (!postulacionId || !mongoose.Types.ObjectId.isValid(postulacionId)) {
+      return res.status(400).json({ message: "ID de postulación incorrecto" });
     }
-  };
-
-  // ============================================================
-  // Remover una postulación de favoritos del pasante
-  // ============================================================
-  static removeFavorito = async (req, res) => {
-    try {
-      const { postulacionId } = req.params;
-      const userId = req.user?.id;
-
-      if (!postulacionId || !mongoose.Types.ObjectId.isValid(postulacionId)) {
-        return res.status(400).json({ message: "ID de postulación incorrecto" });
-      }
-      if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(401).json({ message: "Usuario no autenticado" });
-      }
-
-      // Quitar del array de favoritos del pasante
-      const pasante = await Pasante.findOneAndUpdate(
-        { userId },
-        { $pull: { favoritos: postulacionId } },
-        { new: true }
-      ).lean();
-
-      if (!pasante) {
-        return res.status(404).json({ message: "Perfil de pasante no encontrado" });
-      }
-
-      // Obtener las postulaciones favoritas restantes
-      const favoritas = await Postulacion.find(
-        { _id: { $in: pasante.favoritos } },
-        "titulo empresa descripcion estado duracion modalidad logo"
-      ).lean();
-
-      const data = favoritas.map(p => ({
-        ...p,
-        esFavorito: true
-      }));
-
-      return res.status(200).json({
-        message: "Postulación removida de favoritos",
-        favoritos: data
-      });
-
-    } catch (err) {
-      console.error("[removeFavorito] →", err);
-      return res.status(500).json({
-        message: "Error interno del servidor",
-        error: err.message,
-      });
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({ message: "Usuario no autenticado" });
     }
-  };
+
+    // ✅ Verificar que la postulación existe
+    const postulacionExiste = await Postulacion.findById(postulacionId);
+    if (!postulacionExiste) {
+      return res.status(404).json({ message: "Postulación no encontrada" });
+    }
+
+    // ✅ Buscar el pasante primero
+    let pasante = await Pasante.findOne({ userId });
+
+    if (!pasante) {
+      return res.status(404).json({ message: "Perfil de pasante no encontrado" });
+    }
+
+    console.log('📋 Favoritos antes:', pasante.favoritos);
+
+    // ✅ Verificar si ya está en favoritos
+    const yaEsFavorito = pasante.favoritos.some(
+      fav => fav.toString() === postulacionId
+    );
+
+    if (yaEsFavorito) {
+      console.log('⚠️ Ya es favorito, no se agrega de nuevo');
+    } else {
+      // ✅ Agregar al array y guardar
+      pasante.favoritos.push(postulacionId);
+      await pasante.save();
+      console.log('✅ Favorito agregado');
+    }
+
+    console.log('📋 Favoritos después:', pasante.favoritos);
+
+    // ✅ Obtener las postulaciones favoritas actualizadas
+    const favoritas = await Postulacion.find(
+      { _id: { $in: pasante.favoritos } },
+      "titulo empresa descripcion estado duracion modalidad logo"
+    ).lean();
+
+    const data = favoritas.map(p => ({
+      ...p,
+      _id: p._id.toString(),
+      esFavorito: true
+    }));
+
+    return res.status(200).json({
+      message: "Postulación añadida a favoritos",
+      favoritos: data
+    });
+
+  } catch (err) {
+    console.error("[addFavorito] →", err);
+    return res.status(500).json({
+      message: "Error interno del servidor",
+      error: err.message,
+    });
+  }
+};
+
+// ============================================================
+// Remover una postulación de favoritos del pasante
+// ============================================================
+static removeFavorito = async (req, res) => {
+  try {
+    const { postulacionId } = req.params;
+    const userId = req.user?.id;
+
+    console.log('📥 removeFavorito - userId:', userId, 'postulacionId:', postulacionId);
+
+    if (!postulacionId || !mongoose.Types.ObjectId.isValid(postulacionId)) {
+      return res.status(400).json({ message: "ID de postulación incorrecto" });
+    }
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({ message: "Usuario no autenticado" });
+    }
+
+    // ✅ Buscar el pasante primero
+    let pasante = await Pasante.findOne({ userId });
+
+    if (!pasante) {
+      return res.status(404).json({ message: "Perfil de pasante no encontrado" });
+    }
+
+    console.log('📋 Favoritos antes:', pasante.favoritos);
+
+    // ✅ Filtrar el array para remover el favorito
+    const favoritosIniciales = pasante.favoritos.length;
+    pasante.favoritos = pasante.favoritos.filter(
+      fav => fav.toString() !== postulacionId
+    );
+
+    if (pasante.favoritos.length === favoritosIniciales) {
+      console.log('⚠️ El favorito no estaba en la lista');
+    } else {
+      await pasante.save();
+      console.log('✅ Favorito removido');
+    }
+
+    console.log('📋 Favoritos después:', pasante.favoritos);
+
+    // ✅ Obtener las postulaciones favoritas restantes
+    const favoritas = await Postulacion.find(
+      { _id: { $in: pasante.favoritos } },
+      "titulo empresa descripcion estado duracion modalidad logo"
+    ).lean();
+
+    const data = favoritas.map(p => ({
+      ...p,
+      _id: p._id.toString(),
+      esFavorito: true
+    }));
+
+    return res.status(200).json({
+      message: "Postulación removida de favoritos",
+      favoritos: data
+    });
+
+  } catch (err) {
+    console.error("[removeFavorito] →", err);
+    return res.status(500).json({
+      message: "Error interno del servidor",
+      error: err.message,
+    });
+  }
+};
 
 
     // ============================================================
